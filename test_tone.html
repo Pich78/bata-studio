@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tone.js Base64 Sequencer</title>
+    <script src="https://unpkg.com/tone"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 20px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Riproduci Sequenza Audio</h1>
+    <button id="playButton">Riproduci Sequenza</button>
+    <p id="status">Clicca "Riproduci Sequenza" per iniziare.</p>
+
+    <script>
+        const audioFilesBase64 = [];
+
+        function generateSimpleBeepBase64(frequency = 440, duration = 0.5, volume = 0.5) {
+            const sampleRate = 44100;
+            const numSamples = Math.floor(sampleRate * duration);
+            const numChannels = 1;
+            const bitsPerSample = 8;
+
+            const dataLength = numSamples * numChannels * (bitsPerSample / 8);
+            const buffer = new ArrayBuffer(44 + dataLength);
+            const view = new DataView(buffer);
+
+            let offset = 0;
+
+            function writeString(str) {
+                for (let i = 0; i < str.length; i++) {
+                    view.setUint8(offset++, str.charCodeAt(i));
+                }
+            }
+
+            writeString('RIFF');
+            view.setUint32(offset, 36 + dataLength, true); offset += 4;
+            writeString('WAVE');
+
+            writeString('fmt ');
+            view.setUint32(offset, 16, true); offset += 4;
+            view.setUint16(offset, 1, true); offset += 2;
+            view.setUint16(offset, numChannels, true); offset += 2;
+            view.setUint32(offset, sampleRate, true); offset += 4;
+            view.setUint32(offset, sampleRate * numChannels * (bitsPerSample / 8), true); offset += 4;
+            view.setUint16(offset, numChannels * (bitsPerSample / 8), true); offset += 2;
+            view.setUint16(offset, bitsPerSample, true); offset += 2;
+
+            writeString('data');
+            view.setUint32(offset, dataLength, true); offset += 4;
+
+            for (let i = 0; i < numSamples; i++) {
+                const value = Math.sin(2 * Math.PI * frequency * i / sampleRate) * 127 * volume;
+                view.setInt8(offset++, value);
+            }
+
+            const blob = new Blob([view], { type: 'audio/wav' });
+            return new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        async function populateExampleAudio() {
+            const beep1 = await generateSimpleBeepBase64(440, 0.3, 0.7);
+            const beep2 = await generateSimpleBeepBase64(550, 0.4, 0.6);
+            const silence = await generateSimpleBeepBase64(0, 0.5, 0); // Un silenzio di 0.5 secondi
+
+            audioFilesBase64.push(beep1, silence, beep2, silence, beep1);
+
+            console.log("Esempi audio Base64 generati:", audioFilesBase64);
+            document.getElementById('status').textContent = 'Pronto a riprodurre con esempi generati. Premi "Riproduci Sequenza".';
+        }
+
+        window.onload = populateExampleAudio;
+
+        const playButton = document.getElementById('playButton');
+        const statusDisplay = document.getElementById('status');
+        let currentAudioIndex = 0;
+        let isPlaying = false;
+        let activePlayer = null; // Manteniamo un riferimento al player attivo per poterlo disporre
+
+        playButton.addEventListener('click', async () => {
+            if (isPlaying) {
+                statusDisplay.textContent = "Riproduzione già in corso...";
+                return;
+            }
+
+            await Tone.start();
+            console.log("Contesto audio avviato.");
+
+            isPlaying = true;
+            statusDisplay.textContent = "Inizio riproduzione...";
+            currentAudioIndex = 0;
+
+            async function playNextAudio() {
+                if (currentAudioIndex < audioFilesBase64.length) {
+                    const audioData = audioFilesBase64[currentAudioIndex];
+
+                    // Pulisce il player precedente se esiste
+                    if (activePlayer) {
+                        activePlayer.dispose();
+                        activePlayer = null;
+                    }
+
+                    // Crea un nuovo player per l'audio corrente
+                    const player = new Tone.Player().toDestination();
+                    activePlayer = player; // Aggiorna il riferimento al player attivo
+
+                    try {
+                        await player.load(audioData);
+                        const duration = player.buffer.duration;
+                        console.log(`Audio ${currentAudioIndex + 1} caricato. Durata: ${duration} secondi.`);
+                        statusDisplay.textContent = `Riproducendo audio ${currentAudioIndex + 1} di ${audioFilesBase64.length}...`;
+
+                        // Imposta il callback onended (se funziona, è il modo più preciso)
+                        player.onended = () => {
+                            console.log(`[onended] Audio ${currentAudioIndex + 1} terminato. Passando al prossimo...`);
+                            // Impedisci al timer di attivarsi se onended ha già avanzato
+                            clearTimeout(nextAudioTimer);
+                            currentAudioIndex++;
+                            playNextAudio();
+                        };
+
+                        player.start();
+
+                        // *** AGGIUNGI IL TIMER DI BACKUP QUI ***
+                        // Se onended non scatta, questo timer forzerà l'avanzamento.
+                        // Aggiungi un piccolo padding per sicurezza (es. 100ms)
+                        const nextAudioTimer = setTimeout(() => {
+                            // Solo se onended non ha già attivato il prossimo audio
+                            if (activePlayer === player) { // Assicurati che sia ancora il player corrente
+                                console.warn(`[Timer Backup] Audio ${currentAudioIndex + 1} terminato (onended non scattato). Forzando il prossimo...`);
+                                currentAudioIndex++;
+                                playNextAudio();
+                            }
+                        }, (duration * 1000) + 100); // Durata in ms + padding
+
+                    } catch (e) {
+                        console.error(`Errore nel caricamento o riproduzione dell'audio ${currentAudioIndex + 1}:`, e);
+                        statusDisplay.textContent = "Errore durante il caricamento o riproduzione dell'audio.";
+                        isPlaying = false;
+                        if (activePlayer) {
+                           activePlayer.dispose();
+                           activePlayer = null;
+                        }
+                    }
+                } else {
+                    statusDisplay.textContent = "Sequenza completata!";
+                    console.log("Sequenza completata.");
+                    isPlaying = false;
+                    if (activePlayer) {
+                        activePlayer.dispose();
+                        activePlayer = null;
+                    }
+                }
+            }
+
+            // Avvia la riproduzione del primo audio
+            playNextAudio();
+        });
+    </script>
+
+</body>
+</html>
