@@ -1,262 +1,154 @@
-Role and Goal:
-You are an advanced AI specializing in front-end web development with a deep expertise in pure JavaScript (HTML, CSS, JS) and audio programming, particularly with Web Audio API libraries like Tone.js. Your primary objective is to develop a complete, self-contained web application named "Batá Studio." This application will function as a powerful and intuitive editor/sequencer for Batá drum rhythms, strictly adhering to the comprehensive specifications provided below. The final output must be a single HTML file, optimized for responsiveness across both desktop and mobile devices.
-
-Deliverable:
-Generate a single, self-contained index.html file that includes:
-
-A complete and valid HTML5 document structure.
-
-All CSS code embedded within a <style> tag in the <head> section. Inline CSS should only be used if absolutely necessary for dynamic layout adjustments not achievable otherwise.
-
-All JavaScript code embedded within a <script> tag, ideally placed just before the closing </body> tag for optimal loading.
-
-All necessary audio sample data embedded directly within the JavaScript as Base64 encoded strings or similar in-memory representations. Crucially, provide placeholder comments (// INSERT BASE64 DATA FOR [sample_name].wav HERE) for where these Base64 strings should be inserted, as the actual WAV files are not provided in this prompt. The loading logic for these samples must be fully implemented.
-
-Integration of the Tone.js library. Embed its source code directly into the JavaScript section to ensure the index.html file is truly self-contained and requires no external network requests after initial download.
-
-I. Core Application Requirements & Architecture:
-
-Self-Contained: The entire application (HTML, CSS, JS, embedded audio data) must reside within a single index.html file. No external .css, .js, or audio files should be linked or loaded dynamically.
-
-Client-Side Execution: All parsing, rendering, audio processing, and UI interactions must occur purely client-side using JavaScript.
-
-Audio Engine: Utilize Tone.js (Web Audio API) for all audio playback. Ensure precise timing and sample triggering.
-
-Responsiveness: The UI must be fully responsive, adapting seamlessly to various screen sizes and orientations (desktop, tablet, smartphone).
-
-No Server-Side Components: The application is purely front-end; no server-side logic is required.
-
-II. .tubs File Format (Input/Output):
-
-Standard Format: This is the universal format for importing and exporting rhythms.
-
-Strict Structure: The parser must strictly adhere to the defined order of lines for the Toque Name and for each section's properties.
-
-First Line: Toque Name: "YourToqueName" (e.g., Toque Name: "Chachalokefun")
-
-Section Definition Order (Fixed):
-
-Section: "YourSectionName" (e.g., Section: "Intro")
-
-Repetitions: N (Integer N, number of times this section repeats before moving to Next Section)
-
-Time: Metric (e.g., 4/4, 6/8, 12/8. Defines the time signature for this section.)
-
-Next Section: "NextSectionName" (Specifies the name of the section to transition to after Repetitions are complete. If the referenced section doesn't exist in the file, treat this internally as an empty string "". If the line is entirely absent, also treat as "".)
-
-Max Loops: N (Integer N, max times the flow can loop through or return to this section within a larger sequence. Default value is 4 if line is absent or N is 0.)
-
-Loop Exit Section: "PostLoopSectionName" (Specifies the name of the section to transition to when Max Loops limit is reached. If empty, absent, or the referenced section doesn't exist, playback will proceed to the next section in the file's sequential order.)
-
-Drum Beat Sequence Order (Fixed - three lines per section):
-
-Okonkolo: BeatSequence (e.g., Okonkolo: S-OS-OS-OS-OS-OS)
-
-Itotele: BeatSequence (e.g., Itotele: S--S--B--S--S--B)
-
-Iya: BeatSequence (e.g., Iya: B---S---S---S---S)
-
-Allowed Beat Symbols: S (Slap), O (Open), P (Pressed), B (Mouth/Bite), T (Finger/Ghost Note), - (Rest).
-
-Case Insensitivity: All section names (Section:, Next Section:, Loop Exit Section:) and their references will be treated as case-insensitive. The parser and UI logic must automatically convert user input for section names to lowercase for internal consistency and comparison.
-
-Parsing Robustness:
-
-Ignore extra whitespace in headers (e.g.,  Section : "Name") and after colons in drum definitions.
-
-Validate that beat sequences only contain allowed symbols.
-
-Validate section structure: Each section must have exactly three drum lines.
-
-Critical Length Validation: All three drum beat sequences within a single section must have the exact same number of characters. If lengths differ, the parser must flag an error; no implicit padding or truncation is allowed.
-
-The "time unit" for a section is derived from the common length of its beat sequences and the specified time signature (e.g., if a 4/4 section has 16 beats, each beat is a 16th note).
-
-III. Core Application Functionality:
-
-3.1. Interactive Editor (Primary UI Feature)
-Initial State: Application opens with an empty, "white" interactive grid (representing a single, empty section) ready for user input.
-
-Beat Input: Users can insert beats by clicking on grid cells. When a beat symbol is selected (from the header controls), clicking a grid cell will place that symbol.
-
-Grid Adjustment:
-
-For each section, provide two input fields for the time signature (numerator/denominator) (e.g., 4/4).
-
-Provide a dropdown menu to select the subdivision unit (quarter, eighth, sixteenth, or thirty-second notes) per measure.
-
-The grid UI for that section must dynamically adapt to these changes (e.g., adding/removing columns).
-
-Crucially, any existing beats within the section must maintain their correct relative positions when time signature or subdivision changes.
-
-Section Management:
-
-Visible Controls: For each section in the scrollable area, its dedicated controls (section name input, repetitions input, "Next Section" dropdown, "Max Loops" numeric input, "Loop Exit Section" dropdown) must be always visible and directly editable when the application is not in playback mode.
-
-"Add Section" Button (Floating UI): Implement a single, dynamic "Add Section" button. This button only appears when the mouse cursor hovers for a specific duration (e.g., 500ms) near the bottom border of an existing section, or precisely between two sections. When clicked, it inserts a new, empty section at that specific location. The button should disappear once the section is added or the mouse moves away.
-
-Section Ordering: Each section must have dedicated "Move Up" and "Move Down" buttons/icons allowing the user to reorder sections within the sequence.
-
-Section Deletion: Each section must have a dedicated "Delete Section" button/icon for removal.
-
-3.2. File Operations (Load/Save)
-Loading Rhythms:
-
-Implement a "Load" option (via the header menu) to open a system file dialog using the File System Access API.
-
-Upon successful file selection, parse the .tubs content and display it in the editor.
-
-No visual loading indicator (e.g., spinner) is required during this operation.
-
-Saving Rhythms:
-
-Implement a "Save" option (via the header menu) to open a system file dialog using the File System Access API for downloading the current rhythm as a .tubs file.
-
-No visual saving indicator (e.g., spinner) is required during this operation.
-
-Pre-Save Validation:
-
-Toque Name Required: Saving is only allowed if a "Toque Name" has been entered. If not, trigger an error popup.
-
-Unique Section Names: Ensure all section names are unique (case-insensitive) before saving. If duplicates exist, trigger an error popup.
-
-Valid Section References: Verify that all Next Section and Loop Exit Section references point to existing section names (case-insensitive).
-
-The saved .tubs file must precisely reflect the current state of the editor, including section order and all metadata.
-
-3.3. Local Persistence
-Automatic Save to Local Storage: The entire state of the editor (all sections, their properties, beat data, current settings) must be automatically saved to the browser's Local Storage at regular intervals (e.g., every few seconds, or on significant changes).
-
-Automatic Load from Local Storage: Upon application launch, attempt to load the rhythm data from Local Storage. If present, restore the editor to its last saved state. This ensures persistence even if the user closes the browser without explicitly saving the .tubs file.
-
-IV. Audio Processing & Playback Logic:
-
-Sample Management:
-
-All necessary drum samples (iya_slap.wav, iya_open.wav, okonkolo_slap.wav, etc.) should be loaded into Tone.js Player objects (or similar) from their Base64 embedded data.
-
-Sample Playback Behavior: Each sample plays for its natural resonance. A new beat for the same drum should immediately interrupt any previously playing sound from that drum. A rest (-) longer than the previous sample's resonance should introduce silence.
-
-Drum Muting:
-
-Full Drum Mute: Clicking the center of a drum's image in the header mutes/unmutes all sounds from that specific drum (Okonkolo, Itotele, Iya). Visually, the entire drum image should turn gray when muted.
-
-Face-Specific Mute: Clicking on the left half (mouth/boca) or right half (butt/culatta) of a drum's image mutes only sounds associated with that specific face. The corresponding half of the drum image should turn gray when muted.
-
-Mouth (Boca): Controls O (Open), P (Pressed), and the O component of B (Mordito).
-
-Butt (Culatta): Controls S (Slap) and the S component of B (Mordito).
-
-Interaction with B (Mordito): If the mouth is muted, a B beat should only play the S (Slap) component. If the butt is muted, a B beat should only play the O (Open) component. If both are muted, B plays nothing.
-
-Missing Sound Simulation:
-
-B (Mordito): Play both the O (Open) and S (Slap) samples for that drum simultaneously.
-
-P (Pressed): Replace playback with the O (Open) sample for that drum.
-
-T (Finger/Ghost Note): If a specific sample for T is not available, replace playback with a rest (-).
-
-S (Slap): Always relates to the butt (culatta).
-
-O (Open) and P (Pressed): Always relate to the mouth (boca).
-
-Playback Controls: Implement standard Play, Pause, Stop buttons in the header.
-
-Tempo Control: A slider or input field for BPM (Beats Per Minute). The quarter note (1/4) should be the reference unit (e.g., 1/4 = 120 BPM).
-
-No Individual Volume Control: Volume sliders for individual drums are explicitly not required in this version.
-
-Playback Flow Logic:
-
-Starting Point: Playback defaults to the first section loaded/created. A dropdown menu in the header must allow the user to select any existing section as the starting point.
-
-Section Repetitions: After a section completes its Repetitions, the flow transitions:
-
-To Next Section if specified and valid.
-
-Otherwise, to the next section in the file's sequential order.
-
-Max Loops Complex Logic:
-
-The Max Loops counter for each section must be tracked within the overall playback flow.
-
-Every time the playback flow enters or returns to a specific section (meaning it's part of a loop or being re-entered), that section's Max Loops counter should decrement.
-
-If a section's Max Loops counter reaches 0:
-
-The flow attempts to transition to its Loop Exit Section (if specified and valid).
-
-Otherwise (if Loop Exit Section is empty/invalid, or if the flow would normally proceed to the next section in order after hitting the Max Loops limit without a valid Loop Exit Section), playback must STOP.
-
-V. User Interface (UI) & Visuals:
-
-General Appearance:
-
-Background: The overall application background should be rgb(100, 100, 100).
-
-Fixed Header Section: This top section of the UI must remain visible and not scroll.
-
-Menu: An expandable menu (e.g., hamburger icon) containing "Load .tubs" and "Save .tubs" options.
-
-Drum Visuals & Mute Controls:
-
-Display clear images of the three Batá drums (Okonkolo, Itotele, Iya).
-
-Implement the full drum mute (click center, whole drum grays out) and face-specific mute (click left/right half, half drum grays out).
-
-Playback Controls: Visually distinct Play, Stop, and Pause buttons.
-
-Time Signature Input: Two separate input fields (numerator and denominator) for the current section's time signature.
-
-Beat Symbol Selection: A row of visually distinct buttons/icons representing each allowed beat symbol (S, O, P, B, T, -).
-
-Only one symbol can be active/selected at a time.
-
-Clicking an active symbol should deselect it (no symbol is active).
-
-Scrollable Score Grid Section: The main content area where rhythms are created and viewed. This section should be vertically scrollable.
-
-Grid Layout: A grid structure where each cell represents a "time box unit" for a beat.
-
-Orientation: Vertical, with drum names/images potentially repeating on the left side of the scrollable area for consistent reference. Notes scroll horizontally from left to right.
-
-Dynamic Width: The grid's width should adapt to the number of subdivisions and measures in the current section, ensuring full visibility without horizontal scrolling unless necessary.
-
-Beat Visualization:
-
-Colors: Beat symbols must be colored according to the drum:
-
-Okonkolo: Red (rgb(200, 0, 0))
-
-Itotele: Yellow (rgb(255, 200, 0))
-
-Iya: Blue (rgb(0, 0, 150))
-
-Graphical Symbols (within cells):
-
-S: Equilateral triangle (pointing up)
-
-O: Circle
-
-P: Circle with a dashed outline
-
-B: Circle enclosing a triangle
-
-T: Small 'x'
-
--: Empty cell (no symbol)
-
-Playback Highlighting: While the rhythm is playing, the background of the entire grid column corresponding to the currently sounding beat must light up in white.
-
-No Metronome Visual/Sound: There should be no visual metronome count or audible click sounds to mark measure/section transitions.
-
-VI. Quality & Development Practices (for the AI):
-
-Code Clarity: Even though it's a single file, the JavaScript code should be well-organized into logical functions and modules (within the single script tag) to enhance readability and maintainability.
-
-Commenting: Add extensive, clear comments, especially for complex logic like .tubs parsing, the Max Loops flow, and audio routing.
-
-Error Handling: Implement robust error handling for file operations, validation, and parsing, communicating issues to the user via popup windows.
-
-HTML/CSS Best Practices: Use semantic HTML5 elements. CSS should be well-structured and leverage modern flexbox/grid for responsive layouts where appropriate.
+# Batá Studio: Detailed Specifications
+
+## 1. Architecture and Technologies (JavaScript Only)
+
+* The entire application will be built using **HTML, CSS, and JavaScript**.
+* Parsing of the `.tubs` format, audio playback logic, and all User Interface (UI) management will occur **client-side** using JavaScript.
+* **Tone.js** (based on the Web Audio API) will be used for audio playback to ensure precision and efficient sample management.
+* Drum sample `.wav` audio files will be **embedded directly within the HTML file** (e.g., as Base64 data) to ensure the application is completely self-contained after initial loading.
+
+## 2. Input/Output File (`.tubs`)
+
+* The `.tubs` format remains the standard for importing and exporting rhythms.
+* **`.tubs` Structure:**
+    * **First Line (Toque Name):** `Toque Name: "ToqueName"`
+    * **Sections:** Each section has a header with the following **fixed order**:
+        1.  `Section: "SectionName"` (e.g., `Section: "Part 1"`)
+        2.  `Repetitions: N` (where `N` is an integer indicating the number of repetitions for the section)
+        3.  `Time: Metric` (e.g., `4/4`, `6/8`, `12/8`, etc., indicates the time signature of the section)
+        4.  `Next Section: "NextSectionName"` (Indicates the name of the section to transition to after normal repetitions. If the section does not exist in the file, this field will be interpreted as an empty string `""`. If the line is absent, an empty string is assumed.)
+        5.  `Max Loops: N` (where `N` is an integer indicating the maximum number of times the flow can loop through this section, or a loop including this section. **The default value is 4** if absent or `0`.)
+        6.  `Loop Exit Section: "PostLoopSectionName"` (Indicates the name of the section to transition to **when the `Max Loops` limit is reached**. If empty, absent, or the section does not exist, playback will proceed to the next section in the file's order.)
+    * **Beat Sequence:** Followed by **three lines**, one for each drum, in **fixed order**:
+        1.  `Okonkolo: BeatSequence` (e.g., `Okonkolo: S-OS-OS-OS-OS-OS`)
+        2.  `Itotele: BeatSequence` (e.g., `Itotele: S--S--B--S--S--B`)
+        3.  `Iya: BeatSequence` (e.g., `Iya: B---S---S---S---S`)
+* **Allowed Beat Symbols:** `S` (Slap), `O` (Open), `P` (Pressed), `B` (Mouth/Bite), `T` (Finger/Ghost Note), `-` (Rest).
+
+## 3. Core Application Features
+
+* **Interactive Editor (Primary Feature):**
+    * The app will open displaying an **interactive "white" grid** ready to be populated (empty initial section).
+    * The user can **insert beats** by clicking or interacting with the grid cells.
+    * **Grid Adjustment:**
+        * The user can select the **time signature** (e.g., `4/4` or `6/8`) for the section via two input fields for numerator and denominator.
+        * They can also specify the **number of subdivisions** (quarter, eighth, sixteenth, or thirty-second notes) per measure via a dropdown menu.
+        * The grid will **dynamically adapt** to changes in time signature and subdivisions, and already inserted beats will **maintain their relative positions**.
+    * **Section Management:**
+        * Each section will have its header displayed in the UI with: **section name, number of repetitions, next section, loop limit (Max Loops), and loop exit section (Loop Exit Section)**. These controls will be **always visible and editable when the application is not playing**.
+        * **"Add Section" Button:** This button will be "floating"; it will **appear as a single button** when the mouse hovers for a certain time near the bottom edge of a section or between two sections, allowing a section to be added at that point. Once the section is added, it disappears.
+        * **Edit Repetitions:** Numeric input to specify the **number of times a section should be repeated**.
+        * **"Next Section" Selection:** Via a **dropdown menu** that will only show names of already defined sections. If a "next section" loaded from a file does not exist, it will be displayed as an empty string, and the user can correct it.
+        * **Max Loops:** Numeric input to specify the loop limit. **The default value in the editor will be 4.**
+        * **"Loop Exit Section" Selection:** Via a **dropdown menu** that will only show names of already defined sections. If a loop exit section loaded from a file does not exist, it will be displayed as an empty string.
+        * **Move Sections:** Using dedicated buttons on each section, the user can **move a section up or down** relative to others.
+        * **Delete Sections:** Using dedicated buttons, the user can **delete a section**.
+    * **Immediate Playback:** It will be possible to **immediately listen to the created rhythm** directly from the editor, respecting repetitions, section flow, and `Max Loops` limits with their respective exits.
+* **Load Rhythm:**
+    * It will be possible to **load a `.tubs` file from the user's local disk** using the **File System Access API**.
+    * **There will be no specific visual indication** (e.g., spinner) during loading operations.
+    * Once loaded, the `.tubs` content will be displayed in the editing grid, respecting all sections, repetitions, flows, and loop limits.
+* **Save Rhythm:**
+    * It will be possible to **download the created or modified rhythm** in `.tubs` format to the user's local disk, also via the File System Access API.
+    * **There will be no specific visual indication** during saving operations.
+    * The user **must enter the toque name** before being able to save the file. If the toque name is not present, saving will not be allowed.
+    * The sequence saved in the `.tubs` file will be **exactly as displayed on screen** at the time of saving, including the order of sections and all metadata.
+    * **Validation on Save:** During saving, the system will **verify that everything is in order**, including the **uniqueness of section names** (treated as case-insensitive) and the validity of `Next Section`/`Loop Exit Section` references to existing sections.
+    * **Errors** (e.g., malformed file on load, toque name not entered on save, duplicate section names) will be communicated to the user via **error popup windows**.
+
+## 4. Parsing and Validation (JavaScript Side)
+
+* The JavaScript parser will handle reading, interpreting, and validating `.tubs` data (both for loaded files and internal generation from the editor).
+* **Ignore Spaces:** The parser will ignore extra spaces in headers and after colons in drum definitions.
+* **Symbol Validation:** It will verify that beat sequences contain only allowed symbols.
+* **Section Structure Validation:** It will report errors if a section does not have all three drum lines or if lines are missing.
+* **Sequence Length Validation:** It will report an error if the three beat sequences within the same section **do not have exactly the same number of characters**. There will be no implicit normalization or expansion with rests; the length must match.
+* **Time Unit Deduction:** The "time unit" for a section will be deduced from the common length of the sequences and the specified metric.
+* **"Next Section" and "Loop Exit Section" Validation:** The parser will verify that the specified section name actually exists in the `.tubs` file. If it does not exist, the value will be set as an empty string internally for the editor.
+* **Case Insensitivity of Section Names:** All section names (in the `.tubs` file and in the UI) will be treated as **case-insensitive**. Any user input for section names will be automatically converted to **lowercase** for internal consistency.
+
+## 5. Audio Sample Management and Playback (JavaScript Side)
+
+* **Sample Naming:** `.wav` files will follow a standard naming convention (e.g., `iya_slap.wav`). They will be preloaded and embedded in the HTML. The **exact technical specifications for audio samples** (sampling rate, bit depth) will be defined later, when data is available.
+* **Sound and Rest Behavior:**
+    * Each sample plays for its natural resonance.
+    * A new beat for the same drum immediately interrupts the previous one.
+    * A rest (`-`) longer than the previous sample's resonance introduces silence.
+* **Playback Controls:** **Play, Pause, Stop** buttons.
+* **Speed Slider (BPM):** Will control the tempo based on the **quarter note as the reference unit** (`1/4 = 120 BPM`).
+* **Volume:** It **will not be possible to adjust the volume** of individual drums in this version.
+* **Drum and Face Muting:** Mute behavior is detailed in the user interface (section 6). The audio logic will be:
+    * **Mouth:** Plays if the beat is `O` (Open), `P` (Pressed), or `B` (Mouth/Bite).
+    * **Butt (Culatta):** Plays if the beat is `S` (Slap) or `B` (Mordito).
+    * If the mouth is muted, for `B` beats, only the Slap sound will be played.
+    * If the butt is muted, for `B` beats, only the Open sound will be played.
+    * Current audio samples (`iya_slap.wav`, `iya_open.wav`, etc.) are sufficient for this logic.
+* **Missing Sound Simulation:**
+    * **Mordito (`B`):** **Simultaneous** playback of "Open Beat" (`O`) and "Slap" (`S`) samples of the same drum.
+    * **Pressed (`P`):** Replaced by the playback of the "Open Beat" (`O`) sample.
+    * **Finger (`T`):** If the specific sample is not present, it will be replaced by a **rest (`-`)**.
+    * **Slap (`S`):** Slap is always related to the **butt**.
+    * **Open (`O`) and Pressed (`P`):** These beats are always related to the **mouth**.
+* **Playback Flow Logic:**
+    * Playback starts by default from the **first section of the file**, but a starting section can be selected from the UI.
+    * **Rhythm Visualization:** As time progresses and sound is active, the **grid column** that is currently playing will be **visually highlighted in white**. There will be no visual metronome or numeric count.
+    * **Measure/Section Transitions:** There will be no specific click sound or visual indication to mark the beginning of a new measure or section during playback.
+    * After completing a section's `Repetitions`:
+        * If `Next Section` is specified and valid, the flow transitions to that section.
+        * If `Next Section` is not specified or not valid, the flow transitions to the next section in file order.
+    * During playback, the `Max Loops` counter for each section is monitored **within the context of the flow path**. When the flow passes through a section (or returns to it in a loop), its `Max Loops` counter decreases.
+    * If the **`Max Loops` limit** (default 4) for a section is reached during playback:
+        * If `Loop Exit Section` is specified and valid, the flow transitions to that section.
+        * **Otherwise (if `Loop Exit Section` is not specified, not valid, or the flow attempts to proceed to the next section in order after a loop without a specific destination), playback will STOP.**
+
+## 6. User Interface and Visualization (JavaScript Side)
+
+* **General Layout:** A single HTML file, with a **responsive design** to adapt to PCs and smartphones.
+* **General Background:** `rgb(100, 100, 100)`.
+* **Fixed Top Section (Header):** This part will always be visible and will not scroll.
+    * **Menu:** An expandable menu (e.g., hamburger icon or similar) that will contain options to **load the `.tubs` file** and **save the `.tubs` file**.
+    * **Drum and Playback Controls:** A dedicated row for these elements:
+        * **Batá Drum Images:** Visual display of the 3 drum images.
+            * **Full Drum Mute:** Clicking the **center** of the drum image mutes/unmutes the entire drum. If muted, the entire drum image turns **gray**.
+            * **Specific Face Mute:** Clicking on one of the **two faces** of the drum image (e.g., left or right half of the image), only that specific face is muted/unmuted. If a face is muted, only the **relevant half of the drum image turns gray**.
+        * **Playback Controls:** **Play, Stop, Pause** buttons.
+        * **Time Signature Input Fields:** Two input fields for entering the **numerator** and **denominator** of the time signature (e.g., `4` and `4` for 4/4).
+        * **Clickable Beat Symbols:** A series of buttons or icons representing the beat symbols (`S`, `O`, `P`, `B`, `T`, `-`).
+            * **Mutually Exclusive Selection:** Only one symbol can be selected at a time. Clicking a symbol, if another was already selected, deselects the previous one.
+            * **Deselection:** Clicking an already selected symbol deselects it (no symbol is active).
+            * **Placement in Grid:** If a symbol is selected and the user clicks on a grid cell below, the selected symbol is placed in that cell.
+* **Scrollable Bottom Section (Score Grid):** The rest of the page, containing the score grid, will be scrollable and display all created sections.
+    * **Section Controls:** Each grid section will have associated controls for:
+        * **Section Name:** Text input for the section name (`Section: "SectionName"`).
+        * **Repetitions:** Numeric input for the number of repetitions (`Repetitions: N`).
+        * **Next Section:** **Dropdown menu** to select the next section (`Next Section: "NextSectionName"`). The dropdown will only show existing sections.
+        * **Max Loops:** Numeric input to define the loop limit.
+        * **Loop Exit Section:** **Dropdown menu** to select the section to transition to when the `Max Loops` limit is reached. The dropdown will only show existing sections.
+        * **Section Management Buttons:**
+            * **"Add Section" Button:** Floating functionality, will appear when hovering the mouse over the bottom border of a section or between two sections.
+            * **"Move Up/Down" Buttons:** To reorder sections.
+            * **"Delete Section" Button:** To remove a section.
+    * **Grid Visualization:** The score will be a grid, where each box represents a "time box unit".
+        * **Orientation:** Vertical, with drum images on the left (which might repeat as a visual reference in the scrollable part) and notes scrolling from left to right.
+        * **Adaptability:** The grid will adapt to the available space in the browser.
+    * **Beat Colors and Symbols (in Grid):** The symbols themselves will have the drum's color.
+        * **Okonkolo:** **Red** beats `rgb(200, 0, 0)`.
+        * **Itotele:** **Yellow** beats `rgb(255, 200, 0)`.
+        * **Iya:** **Blue** beats `rgb(0, 0, 150)`.
+        * **Graphical Symbols:**
+            * `S`: Equilateral triangle (point up).
+            * `O`: Circle.
+            * `P`: Circle with a dashed outline.
+            * `B`: Circle enclosing a triangle.
+            * `T`: Small 'x'.
+            * `-`: Empty box.
+    * **Highlighting:** While the rhythm is playing, the **background of the grid column** of the current beat will light up in **white**.
+    * **Starting Section Selection:** It will be possible to **select which section to start playback from** (default is the first section of the file) via a **dropdown menu** in the upper part of the interface.
+
+## 7. Future Developments (After Initial Version)
+
+* **PWA Functionality:** Transform the app into a Progressive Web App for installability and offline operation (via `manifest.json` and `Service Worker`), once the base application is stable and functional.
+
+## 8. Local Persistence (NEW)
+
+* **Automatic Saving:** The current state of the editor (rhythm, sections, settings) will be **automatically saved in the browser's Local Storage**. This means that if the user closes the browser without explicitly saving the `.tubs` file, the application's state will be restored upon next launch.
