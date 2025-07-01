@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batá Studio</title>
+    <link rel="stylesheet" href="bata_studio_css.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+    <!-- Fixed Header -->
+    <header class="header">
+        <div class="header-row">
+            <!-- Menu -->
+            <div class="menu-container">
+                <button class="menu-toggle" id="menuToggle">
+                    <span class="material-icons">menu</span>
+                </button>
+                <div class="menu-dropdown" id="menuDropdown">
+                    <div class="menu-item" id="loadFile">
+                        <span class="material-icons">folder_open</span>
+                        Load .tubs
+                    </div>
+                    <div class="menu-item" id="saveFile">
+                        <span class="material-icons">save</span>
+                        Save .tubs
+                    </div>
+                </div>
+            </div>
+
+            <!-- Playback Controls -->
+            <div class="playback-controls">
+                <button class="control-btn play" id="playBtn">
+                    <span class="material-icons">play_arrow</span>
+                </button>
+                <button class="control-btn pause" id="pauseBtn">
+                    <span class="material-icons">pause</span>
+                </button>
+                <button class="control-btn stop" id="stopBtn">
+                    <span class="material-icons">stop</span>
+                </button>
+            </div>
+
+            <!-- Tempo Control -->
+            <div class="tempo-control">
+                <label for="tempoInput">BPM:</label>
+                <input type="number" id="tempoInput" class="tempo-input" value="120" min="60" max="200">
+            </div>
+
+            <!-- Starting Section -->
+            <div class="start-section-control">
+                <label for="startSectionSelect">Start:</label>
+                <select id="startSectionSelect" class="start-section-select">
+                    <option value="0">Section 1</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Drums Row -->
+        <div class="drums-row">
+            <div class="drum-container">
+                <div class="drum-image" id="okonkoloDrum" data-drum="okonkolo"></div>
+                <div class="drum-name">Okonkolo</div>
+            </div>
+            <div class="drum-container">
+                <div class="drum-image" id="itoteleDrum" data-drum="itotele"></div>
+                <div class="drum-name">Itotele</div>
+            </div>
+            <div class="drum-container">
+                <div class="drum-image" id="iyaDrum" data-drum="iya"></div>
+                <div class="drum-name">Iya</div>
+            </div>
+        </div>
+
+        <!-- Beat Symbol Selection -->
+        <div class="beat-symbols">
+            <label>Symbols:</label>
+            <button class="symbol-btn" data-symbol="S" title="Slap">
+                <div class="symbol-display">△</div>
+                <span class="symbol-name">Slap</span>
+            </button>
+            <button class="symbol-btn" data-symbol="O" title="Open">
+                <div class="symbol-display">○</div>
+                <span class="symbol-name">Open</span>
+            </button>
+            <button class="symbol-btn" data-symbol="P" title="Presionado">
+                <div class="symbol-display">◯</div>
+                <span class="symbol-name">Presionado</span>
+            </button>
+            <button class="symbol-btn" data-symbol="B" title="Mordito">
+                <div class="symbol-display">◉</div>
+                <span class="symbol-name">Mordito</span>
+            </button>
+            <button class="symbol-btn" data-symbol="T" title="Ghost">
+                <div class="symbol-display">×</div>
+                <span class="symbol-name">Ghost</span>
+            </button>
+            <button class="symbol-btn" data-symbol="-" title="Rest">
+                <div class="symbol-display">-</div>
+                <span class="symbol-name">Rest</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Toque Name Section -->
+        <div class="toque-name-section">
+            <h2>Toque Name</h2>
+            <input type="text" id="toqueNameInput" class="toque-name-input" placeholder="Enter toque name...">
+        </div>
+
+        <!-- Sections Container -->
+        <div id="sectionsContainer"></div>
+
+        <!-- Fixed Add Section Button -->
+        <button class="add-section-btn-fixed" id="addSectionBtn">
+            <span class="material-icons">add</span>
+            Add Section
+        </button>
+    </main>
+
+    <!-- Error Popup -->
+    <div class="error-popup" id="errorPopup">
+        <div class="error-content">
+            <h3>Error</h3>
+            <p id="errorMessage"></p>
+            <button class="error-btn" onclick="hideError()">OK</button>
+        </div>
+    </div>
+
+    <!-- Hidden File Input -->
+    <input type="file" id="fileInput" class="file-input" accept=".tubs">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script src="bata_studio_js.js"></script>
+</body>
+</html>
